@@ -1,26 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --color-brand-orange: #f97316; /* Trackman accent */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Defaults */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    @apply font-sans bg-zinc-900 text-white;
+}
+
+/* Utilities */
+.font-oswald {
+    font-family: var(--font-oswald);
+}
+
+.text-brand-orange {
+    color: var(--color-brand-orange);
+}
+
+.bg-brand-orange {
+    background-color: var(--color-brand-orange);
 }

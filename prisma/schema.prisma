@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String?  @unique
+  passwordHash  String?  // Credentials auth-hoz
+  image         String?
+
+  // Auth.js
+  accounts      Account[]
+  sessions      Session[]
+
+  // Későbbi golf táblákhoz (1:N)
+  practices     Practice[]
+  shots         Shot[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/* --- Golf domain (váz, később bővítjük) --- */
+model Practice {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now())
+  type      PracticeType
+  notes     String?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shots Shot[]
+
+  @@index([userId, type, date])
+}
+
+model Shot {
+  id           String    @id @default(cuid())
+  userId       String
+  practiceId   String?
+  club         ClubType
+  carry        Float?
+  total        Float?
+  ballSpeed    Float?
+  clubSpeed    Float?
+  smash        Float?
+  launchDeg    Float?
+  spin         Int?
+  offlineM     Float?
+  result       String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  practice Practice? @relation(fields: [practiceId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, club, createdAt])
+}
+
+
+enum PracticeType {
+  WEDGE
+  IRON
+  DRIVER
+  PUTT
+  ROUND_SIM   // szimu „round”
+}
+
+enum ClubType {
+  WEDGE_PW
+  WEDGE_GW
+  WEDGE_SW
+  WEDGE_LW
+  IRON_5
+  IRON_6
+  IRON_7
+  IRON_8
+  IRON_9
+  HYBRID
+  DRIVER
+  PUTTER
+}
