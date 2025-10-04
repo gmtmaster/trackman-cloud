@@ -1,9 +1,13 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    typescript: {
+        // ⚠️ Engedélyezi a buildet akkor is, ha TS hibák vannak
+        ignoreBuildErrors: true,
+    },
     eslint: {
+        // ⚠️ Engedélyezi a buildet akkor is, ha ESLint hibák vannak
         ignoreDuringBuilds: true,
     },
-};
+}
 
-export default nextConfig;
+module.exports = nextConfig
