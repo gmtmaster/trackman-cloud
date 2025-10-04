@@ -8,19 +8,29 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
-    // 1️⃣ MOBIL API VÉDELEM
     if (pathname.startsWith("/api/mobile")) {
+        // ⛔️ Kivételek – login és register szabad
+        if (pathname.startsWith("/api/mobile/login") || pathname.startsWith("/api/mobile/register")) {
+            return NextResponse.next();
+        }
+
         const auth = req.headers.get("authorization") || "";
         if (!auth.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
         }
 
         const token = auth.split(" ")[1];
         try {
-            verify(token, JWT_SECRET);
+            verify(token, process.env.NEXTAUTH_SECRET!); // 🔥 egységesen NEXTAUTH_SECRET
             return NextResponse.next();
         } catch {
-            return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+            return new Response(JSON.stringify({ error: "Invalid token" }), {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+            });
         }
     }
 
