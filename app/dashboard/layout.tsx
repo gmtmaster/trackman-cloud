@@ -9,9 +9,6 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }) {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        return <meta httpEquiv="refresh" content="0; url=/login" />;
-    }
 
     return (
         <div className="min-h-screen flex bg-zinc-900 font-sans">

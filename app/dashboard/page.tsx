@@ -5,9 +5,7 @@ import Image from "next/image";
 
 export default async function Dashboard() {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-        return <meta httpEquiv="refresh" content="0; url=/login" />;
-    }
+
 
     return (
         <div className="min-h-screen flex bg-zinc-900 font-sans">
