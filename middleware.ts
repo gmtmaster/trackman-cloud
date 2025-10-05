@@ -9,30 +9,10 @@ export async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     if (pathname.startsWith("/api/mobile")) {
-        // ⛔️ Kivételek – login és register szabad
-        if (pathname.startsWith("/api/mobile/login") || pathname.startsWith("/api/mobile/register")) {
-            return NextResponse.next();
-        }
-
-        const auth = req.headers.get("authorization") || "";
-        if (!auth.startsWith("Bearer ")) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
-
-        const token = auth.split(" ")[1];
-        try {
-            verify(token, process.env.NEXTAUTH_SECRET!); // 🔥 egységesen NEXTAUTH_SECRET
-            return NextResponse.next();
-        } catch {
-            return new Response(JSON.stringify({ error: "Invalid token" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json" },
-            });
-        }
+        // ✅ Allow mobile routes to handle their own auth check in Node runtime
+        return NextResponse.next();
     }
+
 
     // 2️⃣ WEB (NextAuth) ROUTEOK
     const token = await getToken({ req });
@@ -62,6 +42,10 @@ export const config = {
     matcher: [
         // ✅ mobil api védelem
         "/api/mobile/:path*",
+
+        // ✅ web API routes
+        "/api/web/:path*",
+
 
         // ✅ webes oldalak
         "/dashboard/:path*",

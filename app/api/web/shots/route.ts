@@ -1,3 +1,4 @@
+// /app/api/web/shots/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -8,7 +9,7 @@ export async function GET(req: Request) {
     const day = searchParams.get("day");
 
     const where: any = {
-        club: { in: ["IRON_9", "IRON_8", "IRON_7", "IRON_6", "IRON_5"] },
+        club: { in: ["IRON_9", "IRON_8", "IRON_7", "IRON_6", "IRON_5", "IRON_4"] },
     };
 
     if (q) {
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     const shots = await prisma.shot.findMany({
         where,
         include: { user: true, practice: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
     });
 
     return NextResponse.json(shots);
