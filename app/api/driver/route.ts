@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-
+import { ClubType } from "@prisma/client"; // 👈 kötelező
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const day = searchParams.get("day");
 
     const where: any = {
-        club: { in: ["DRIVER", "WOOD_3", "WOOD_5", "HYBRID"] },
+        club: { in: [ClubType.DRIVER, ClubType.WOOD_3, ClubType.WOOD_5, ClubType.HYBRID] },
     };
 
     if (q) {
