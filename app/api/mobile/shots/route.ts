@@ -61,8 +61,8 @@ export async function POST(req: Request) {
         const n = name.toLowerCase();
 
         if (n.includes("driver")) return "DRIVER";
-        if (n.includes("3 wood")) return "THREE_WOOD";
-        if (n.includes("5 wood")) return "FIVE_WOOD";
+        if (n.includes("3 wood")) return "WOOD_3";
+        if (n.includes("5 wood")) return "WOOD_5";
         if (n.includes("7 iron")) return "IRON_7";
         if (n.includes("6 iron")) return "IRON_6";
         if (n.includes("5 iron")) return "IRON_5";
