@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 
 export default function DriverPage() {
-    const [tab, setTab] = useState<"DRIVER" | "3W" | "5W" | "HYBRID">("DRIVER");
+    const [tab, setTab] = useState<"DRIVER" | "WOOD_3" | "WOOD_5" | "HYBRID">("DRIVER");
     const [shots, setShots] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 

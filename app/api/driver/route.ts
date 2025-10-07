@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ClubType } from "@prisma/client"; // 👈 helyes import
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
@@ -9,9 +10,8 @@ export async function GET(req: Request) {
     const day = searchParams.get("day");
 
     const where: any = {
-        club: { in: ["DRIVER", "WOOD_3", "WOOD_5", "HYBRID"] },
+        club: { in: [ClubType.DRIVER, ClubType.WOOD_3, ClubType.WOOD_5, ClubType.HYBRID] },
     };
-
 
     if (q) {
         where.OR = [
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
 
         const newShot = await prisma.shot.create({
             data: {
-                club,
+                club: club as ClubType, // enum típus konverzió
                 carry: parseFloat(carry),
                 total: parseFloat(total),
                 ballSpeed: parseFloat(ballSpeed || 0),
