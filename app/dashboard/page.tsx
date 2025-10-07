@@ -1,97 +1,138 @@
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import Image from "next/image";
+import DashboardChart from "../../components/DashboardChart";
 
 export default async function Dashboard() {
     const session = await getServerSession(authOptions);
+    if (!session?.user?.email) return <p className="text-center mt-20 text-zinc-400">Unauthorized</p>;
 
+    const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { shots: true },
+    });
+
+    if (!user) return <p className="text-center mt-20 text-zinc-400">No user data found</p>;
+
+    const shots = user.shots || [];
+
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekShots = shots.filter((s) => s.createdAt > weekAgo);
+
+    const ironShots = weekShots.filter((s) => s.club?.startsWith("IRON"));
+    const driverShots = weekShots.filter((s) => s.club === "DRIVER");
+    const putts = weekShots.filter((s) => s.club === "PUTTER");
+
+    const avgCarry =
+        ironShots.length > 0
+            ? (ironShots.reduce((a, b) => a + (b.carry || 0), 0) / ironShots.length).toFixed(1)
+            : "–";
+    const avgBallSpeed =
+        driverShots.length > 0
+            ? (driverShots.reduce((a, b) => a + (b.ballSpeed || 0), 0) / driverShots.length).toFixed(1)
+            : "–";
+    const puttAccuracy =
+        putts.length > 0
+            ? (
+                (putts.reduce(
+                        (a, b) => a + ((b.perfectMakes || 0) + (b.goodMakes || 0)),
+                        0
+                    ) /
+                    putts.reduce((a, b) => a + (b.totalPutts || 1), 0)) *
+                100
+            ).toFixed(0)
+            : "–";
+
+    const recentSessions = [...shots]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 5);
+
+    const chartData = Array.from({ length: 7 }).map((_, i) => {
+        const day = new Date();
+        day.setDate(day.getDate() - (6 - i));
+        const label = day.toLocaleDateString("en-US", { weekday: "short" });
+        const dayShots = shots.filter(
+            (s) => s.createdAt.toDateString() === day.toDateString()
+        );
+        const avgCarryDay =
+            dayShots.length > 0
+                ? dayShots.reduce((a, b) => a + (b.carry || 0), 0) / dayShots.length
+                : 0;
+        return { day: label, carry: avgCarryDay.toFixed(0) };
+    });
 
     return (
-        <div className="min-h-screen flex bg-zinc-900 font-sans">
-
-            {/* Main content */}
-            <main className="flex-1 p-10 space-y-10">
-                {/* Greeting */}
-                <h1 className="text-3xl font-oswald text-brand-orange">
+        <div className="min-h-screen text-white font-sans">
+            <main className="max-w-6xl mx-auto p-10 space-y-12">
+                <h1 className="text-4xl font-oswald text-brand-orange">
                     Welcome back, {session.user?.name || session.user?.email}
                 </h1>
 
-                {/* Quick stats */}
+                {/* KPIs */}
                 <section>
-                    <h2 className="text-xl font-oswald text-white mb-4">Your Practice Overview</h2>
+                    <h2 className="text-xl font-oswald mb-4">This Week's Highlights</h2>
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        <StatCard label="Shots this week" value="126" />
-                        <StatCard label="Avg. Carry Distance" value="152 m" />
-                        <StatCard label="Fairway Hit %" value="68%" />
-                        <StatCard label="Putting Accuracy" value="87%" />
+                        <StatCard label="Total Shots" value={weekShots.length.toString()} />
+                        <StatCard label="Avg. Carry" value={`${avgCarry} m`} />
+                        <StatCard label="Avg. Ball Speed" value={`${avgBallSpeed} km/h`} />
+                        <StatCard label="Putting Accuracy" value={`${puttAccuracy}%`} />
                     </div>
                 </section>
 
-                {/* Recent activity */}
+                {/* Chart */}
                 <section>
-                    <h2 className="text-xl font-oswald text-white mb-4">Recent Sessions</h2>
+                    <h2 className="text-xl font-oswald mb-4">Carry Distance (Last 7 Days)</h2>
+                    <DashboardChart data={chartData} />
+                </section>
+
+                {/* Recent Sessions */}
+                <section>
+                    <h2 className="text-xl font-oswald mb-4">Recent Sessions</h2>
                     <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-6 shadow-md">
                         <ul className="divide-y divide-zinc-800">
-                            <li className="py-3 flex justify-between">
-                                <span className="text-zinc-300 font-lato">Wedge practice – 50 balls</span>
-                                <span className="text-sm text-zinc-400">2 days ago</span>
-                            </li>
-                            <li className="py-3 flex justify-between">
-                                <span className="text-zinc-300 font-lato">Driver session – Avg. 245m</span>
-                                <span className="text-sm text-zinc-400">4 days ago</span>
-                            </li>
-                            <li className="py-3 flex justify-between">
-                                <span className="text-zinc-300 font-lato">Putting drill – 30 putts</span>
-                                <span className="text-sm text-zinc-400">1 week ago</span>
-                            </li>
+                            {recentSessions.length === 0 && (
+                                <li className="py-3 text-zinc-500">No sessions yet.</li>
+                            )}
+                            {recentSessions.map((s) => (
+                                <li
+                                    key={s.id}
+                                    className="py-3 flex justify-between items-center hover:bg-zinc-800/40 transition rounded-md px-2"
+                                >
+                                    <div>
+                                        <p className="text-zinc-200 font-oswald">
+                                            {s.club.replace("_", " ")}
+                                        </p>
+                                        <p className="text-sm text-zinc-400">
+                                            {s.result || "–"} &middot;{" "}
+                                            {new Date(s.createdAt).toLocaleDateString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                            })}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-brand-orange text-lg font-semibold">
+                                            {s.carry ? `${s.carry}m` : s.totalPutts ? `${s.totalPutts} putts` : "–"}
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
-                        <div className="mt-4 text-right">
-                            <Link
-                                href="/sessions"
-                                className="text-brand-orange font-oswald hover:underline"
-                            >
-                                View all →
-                            </Link>
-                        </div>
                     </div>
                 </section>
             </main>
-
         </div>
     );
 }
 
-function SidebarLink({ href, title }: { href: string; title: string }) {
-    return (
-        <Link
-            href={href}
-            className="px-3 py-2 rounded-md text-zinc-300 hover:bg-zinc-800 hover:text-brand-orange font-lato transition"
-        >
-            {title}
-        </Link>
-    );
-}
-
+/* ---------- Helper ---------- */
 function StatCard({ label, value }: { label: string; value: string }) {
     return (
-        <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-6 shadow-md text-center">
-            <p className="text-3xl font-oswald text-brand-orange">{value}</p>
-            <p className="text-sm text-zinc-400 font-lato">{label}</p>
+        <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 shadow-md p-6 text-center hover:shadow-xl transition">
+            <p className="text-3xl font-bold text-brand-orange">{value}</p>
+            <p className="text-sm text-zinc-400 mt-1">{label}</p>
         </div>
-    );
-}
-
-function Card({ title, href }: { title: string; href: string }) {
-    return (
-        <Link
-            href={href}
-            className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-6 shadow-md hover:shadow-lg transition flex flex-col"
-        >
-            <h2 className="text-lg font-oswald text-white mb-2">{title}</h2>
-            <p className="text-sm text-zinc-400 font-lato">
-                Detailed statistics and reports
-            </p>
-        </Link>
     );
 }

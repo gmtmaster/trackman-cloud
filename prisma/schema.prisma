@@ -89,6 +89,12 @@ model Shot {
   spin         Int?
   offlineM     Float?
   result       String?
+  distance     String?   // "1m", "1.5m", "2m"
+  totalPutts   Int?
+  perfectMakes Int?
+  goodMakes    Int?
+  misses       Int?
+  notes        String?
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   practice Practice? @relation(fields: [practiceId], references: [id])
@@ -120,4 +126,6 @@ enum ClubType {
   HYBRID
   DRIVER
   PUTTER
+  WOOD_3
+  WOOD_5
 }
