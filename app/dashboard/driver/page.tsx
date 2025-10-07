@@ -13,6 +13,13 @@ import {
 import Link from "next/link";
 
 export default function DriverPage() {
+    const tabs = [
+        { value: "DRIVER", label: "DRIVER" },
+        { value: "WOOD_3", label: "3W" },
+        { value: "WOOD_5", label: "5W" },
+        { value: "HYBRID", label: "HYBRID" },
+    ];
+
     const [tab, setTab] = useState<"DRIVER" | "WOOD_3" | "WOOD_5" | "HYBRID">("DRIVER");
     const [shots, setShots] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -33,10 +40,9 @@ export default function DriverPage() {
     }, []);
 
     const filtered = useMemo(() => {
-        if (shots.length === 0) return [];
-        const normalize = (club: string) => club?.trim()?.toUpperCase().replace(/\s+/g, "_");
+        if (!shots?.length) return [];
         return shots
-            .filter((s) => normalize(s.club) === tab)
+            .filter((s) => s.club?.toUpperCase() === tab)
             .map((s) => ({
                 session: new Date(s.createdAt).toLocaleDateString("en-US", {
                     month: "short",
@@ -53,11 +59,11 @@ export default function DriverPage() {
     }, [shots, tab]);
 
     const stats = useMemo(() => {
-        if (filtered.length === 0) return null;
-        const carryArr = filtered.map((s) => s.carry || 0);
-        const avg = (carryArr.reduce((a, b) => a + b, 0) / carryArr.length).toFixed(1);
-        const max = Math.max(...carryArr);
-        const min = Math.min(...carryArr);
+        if (!filtered.length) return null;
+        const carries = filtered.map((s) => s.carry || 0);
+        const avg = (carries.reduce((a, b) => a + b, 0) / carries.length).toFixed(1);
+        const max = Math.max(...carries);
+        const min = Math.min(...carries);
         const consistency = Math.max(0, (1 - (max - min) / Number(avg)) * 100).toFixed(0);
         return { avg, max, min, consistency };
     }, [filtered]);
@@ -69,27 +75,30 @@ export default function DriverPage() {
             </h1>
 
             <div className="flex flex-wrap gap-3 mb-10">
-                {["DRIVER", "3W", "5W", "HYBRID"].map((club) => (
+                {tabs.map((t) => (
                     <button
-                        key={club}
-                        onClick={() => setTab(club as any)}
-                        className={`px-4 py-2 rounded-md font-oswald tracking-wide ${
-                            tab === club
+                        key={t.value}
+                        onClick={() => setTab(t.value)}
+                        className={`px-4 py-2 rounded-md font-oswald tracking-wide transition-colors ${
+                            tab === t.value
                                 ? "bg-brand-orange text-white"
                                 : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
                         }`}
                     >
-                        {club}
+                        {t.label}
                     </button>
                 ))}
             </div>
 
             {loading ? (
-                <p className="text-zinc-400">Loading data...</p>
+                <p className="text-zinc-400 animate-pulse">Loading data...</p>
             ) : filtered.length === 0 ? (
-                <p className="text-zinc-500">No data for {tab} yet.</p>
+                <p className="text-zinc-500">
+                    No data available for <span className="text-brand-orange">{tab}</span> yet.
+                </p>
             ) : (
                 <>
+                    {/* KPIs */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         <KPI label="Average Carry" value={`${stats?.avg} m`} />
                         <KPI label="Max Carry" value={`${stats?.max} m`} />
@@ -97,16 +106,46 @@ export default function DriverPage() {
                         <KPI label="Consistency" value={`${stats?.consistency}%`} highlight />
                     </div>
 
-                    <div className="bg-zinc-950/70 rounded-xl p-6 border border-zinc-800 mb-8 ">
+                    {/* Quick Insights */}
+                    <div className="bg-zinc-950/70 rounded-xl p-6 border border-zinc-800 mb-8">
                         <h2 className="font-oswald text-xl mb-3 text-brand-orange">Quick Insights</h2>
                         <ul className="space-y-2 text-sm text-zinc-300">
-                            <li>🏌️‍♂️ <b>Ball Speed:</b> {(filtered.reduce((a, b) => a + (b.ballSpeed || 0), 0) / filtered.length).toFixed(1)} km/h average.</li>
-                            <li>⚡ <b>Club Speed:</b> {(filtered.reduce((a, b) => a + (b.clubSpeed || 0), 0) / filtered.length).toFixed(1)} km/h average.</li>
-                            <li>🔥 <b>Smash Factor:</b> {(filtered.reduce((a, b) => a + (b.smash || 0), 0) / filtered.length).toFixed(2)} average.</li>
-                            <li>🎯 <b>Offline Accuracy:</b> {(filtered.reduce((a, b) => a + (b.offline || 0), 0) / filtered.length).toFixed(1)} m average deviation.</li>
+                            <li>
+                                🏌️‍♂️ <b>Ball Speed:</b>{" "}
+                                {(
+                                    filtered.reduce((a, b) => a + (b.ballSpeed || 0), 0) /
+                                    filtered.length
+                                ).toFixed(1)}{" "}
+                                km/h average.
+                            </li>
+                            <li>
+                                ⚡ <b>Club Speed:</b>{" "}
+                                {(
+                                    filtered.reduce((a, b) => a + (b.clubSpeed || 0), 0) /
+                                    filtered.length
+                                ).toFixed(1)}{" "}
+                                km/h average.
+                            </li>
+                            <li>
+                                🔥 <b>Smash Factor:</b>{" "}
+                                {(
+                                    filtered.reduce((a, b) => a + (b.smash || 0), 0) /
+                                    filtered.length
+                                ).toFixed(2)}{" "}
+                                average.
+                            </li>
+                            <li>
+                                🎯 <b>Offline Accuracy:</b>{" "}
+                                {(
+                                    filtered.reduce((a, b) => a + (b.offline || 0), 0) /
+                                    filtered.length
+                                ).toFixed(1)}{" "}
+                                m average deviation.
+                            </li>
                         </ul>
                     </div>
 
+                    {/* Charts */}
                     <div className="grid gap-8 md:grid-cols-2 mb-10">
                         <ChartBox title="Carry Distance (m)">
                             <LineGraph data={filtered} dataKey="carry" color="#f97316" />
@@ -137,7 +176,15 @@ export default function DriverPage() {
 }
 
 /* --- Shared Components --- */
-function KPI({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function KPI({
+                 label,
+                 value,
+                 highlight = false,
+             }: {
+    label: string;
+    value: string;
+    highlight?: boolean;
+}) {
     return (
         <div
             className={`rounded-xl p-4 text-center border ${
@@ -161,7 +208,15 @@ function ChartBox({ title, children }: { title: string; children: React.ReactNod
     );
 }
 
-function LineGraph({ data, dataKey, color }: { data: any[]; dataKey: string; color: string }) {
+function LineGraph({
+                       data,
+                       dataKey,
+                       color,
+                   }: {
+    data: any[];
+    dataKey: string;
+    color: string;
+}) {
     return (
         <ResponsiveContainer width="100%" height={250}>
             <LineChart data={data}>
@@ -173,7 +228,13 @@ function LineGraph({ data, dataKey, color }: { data: any[]; dataKey: string; col
                     labelStyle={{ color: "#e5e5e5" }}
                     itemStyle={{ color }}
                 />
-                <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} dot={false} />
+                <Line
+                    type="monotone"
+                    dataKey={dataKey}
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={false}
+                />
             </LineChart>
         </ResponsiveContainer>
     );
